@@ -1,0 +1,872 @@
+1
+00:00:00,000 --> 00:00:02,475
+In this project, we're going to build
+
+2
+00:00:02,475 --> 00:00:08,175
+a transit status tracker for the city of Chicago using Apache Kafka and its ecosystem.
+
+3
+00:00:08,175 --> 00:00:10,075
+As you can see on the screen,
+
+4
+00:00:10,074 --> 00:00:12,000
+we're going to go ahead and create
+
+5
+00:00:12,000 --> 00:00:14,609
+a website that looks like this and it's going to be powered by
+
+6
+00:00:14,609 --> 00:00:16,530
+real-time event streaming data from
+
+7
+00:00:16,530 --> 00:00:20,670
+Kafka Faust KSQL as well as some of the other tools you learned about in the class.
+
+8
+00:00:20,670 --> 00:00:22,640
+So to complete this project,
+
+9
+00:00:22,640 --> 00:00:25,589
+we've decided that we're going to do a few things.
+
+10
+00:00:25,589 --> 00:00:30,164
+This is the architecture that we're going to have once we're complete with the project.
+
+11
+00:00:30,164 --> 00:00:32,339
+You'll notice that Kafka is a central component.
+
+12
+00:00:32,340 --> 00:00:34,500
+The first thing we're going to do in this project
+
+13
+00:00:34,500 --> 00:00:36,810
+is we're going to create a Kafka producer which
+
+14
+00:00:36,810 --> 00:00:42,300
+produces train arrival and turnstile information into our Kafka cluster.
+
+15
+00:00:42,299 --> 00:00:46,339
+Arrivals will simply indicate that a train has arrived at a particular station and
+
+16
+00:00:46,340 --> 00:00:51,175
+a turnstile event will simply indicate that a passenger has entered the station.
+
+17
+00:00:51,174 --> 00:00:55,144
+Next, we're going to go ahead and create a REST Proxy Producer.
+
+18
+00:00:55,145 --> 00:00:58,490
+So this will be a Python script that simply runs and periodically
+
+19
+00:00:58,490 --> 00:01:02,929
+emits weather data via REST Proxy and puts it into Kafka.
+
+20
+00:01:02,929 --> 00:01:06,655
+Finally, we're going to build a Kafka Connect,
+
+21
+00:01:06,655 --> 00:01:11,120
+JDBC source connector which is going to connect to Postgres and
+
+22
+00:01:11,120 --> 00:01:15,875
+extract data from our stations table and place it into Kafka.
+
+23
+00:01:15,875 --> 00:01:17,719
+On the other side of this,
+
+24
+00:01:17,719 --> 00:01:19,179
+we're going to go ahead and use
+
+25
+00:01:19,180 --> 00:01:23,480
+a Kafka consumer to actually consume data from these Kafka topics.
+
+26
+00:01:23,480 --> 00:01:29,015
+We're also going to be using Faust in KSQL to extract data and transform it.
+
+27
+00:01:29,015 --> 00:01:31,010
+The first step I recommend that you take in
+
+28
+00:01:31,010 --> 00:01:33,725
+this project is to create the Kafka producers.
+
+29
+00:01:33,724 --> 00:01:36,859
+Now, you'll notice in this README that we've actually walked through and
+
+30
+00:01:36,859 --> 00:01:40,405
+given you the specific things that you need to complete in your project.
+
+31
+00:01:40,405 --> 00:01:45,469
+Once you've done that, you'll go ahead and do next the Kafka REST Proxy Producer.
+
+32
+00:01:45,469 --> 00:01:50,780
+Next, you'll do the Kafka Connect JDBC Source Connector and then you'll go
+
+33
+00:01:50,780 --> 00:01:53,028
+ahead and move on to actually consuming
+
+34
+00:01:53,028 --> 00:01:56,164
+the data from the producers that you've created in the previous three steps.
+
+35
+00:01:56,165 --> 00:01:58,430
+So the first thing I recommend that you do is complete
+
+36
+00:01:58,430 --> 00:02:01,850
+the Faust Stream Processor and again I've left
+
+37
+00:02:01,849 --> 00:02:05,329
+some information for you here in case you forgot how to actually run the applications,
+
+38
+00:02:05,329 --> 00:02:08,750
+you can use the Faust-A faust_stream worker command.
+
+39
+00:02:08,750 --> 00:02:13,219
+You can also say Python name of the Faust file space worker
+
+40
+00:02:13,219 --> 00:02:18,460
+if you'd like but this is the traditional way of actually hitting a Faust application.
+
+41
+00:02:18,460 --> 00:02:21,810
+Next, we'll configure the KSQL table and
+
+42
+00:02:21,810 --> 00:02:26,080
+the KSQL table will transform an incoming stream into a different dataset,
+
+43
+00:02:26,080 --> 00:02:30,469
+and then finally we're going to go ahead and create Kafka Consumers to
+
+44
+00:02:30,469 --> 00:02:35,344
+actually consume the data in our final output application to render the webpage for us.
+
+45
+00:02:35,344 --> 00:02:38,465
+I've also included some helpful documentation for you.
+
+46
+00:02:38,465 --> 00:02:42,469
+Described the directory layout and put asterisks next to the files that you need to
+
+47
+00:02:42,469 --> 00:02:47,109
+complete and I've given some information on running locally if you'd like.
+
+48
+00:02:47,110 --> 00:02:49,315
+So I recommend using the workspace.
+
+49
+00:02:49,314 --> 00:02:51,085
+But if you prefer to run this on your local machine,
+
+50
+00:02:51,085 --> 00:02:54,730
+I've also provided a Docker Compose file which you can use to start up.
+
+51
+00:02:54,729 --> 00:02:57,789
+I do want to mention though that if you're going to use Docker Compose,
+
+52
+00:02:57,789 --> 00:02:59,560
+it does take a little while to start up.
+
+53
+00:02:59,560 --> 00:03:00,819
+On my computer, for example,
+
+54
+00:03:00,819 --> 00:03:03,039
+this takes about three to five minutes to get going.
+
+55
+00:03:03,039 --> 00:03:06,275
+So you'll need to be patient and you'll need to have a pretty recent computer.
+
+56
+00:03:06,275 --> 00:03:09,909
+Finally, there's actually instructions down here and actually running the simulation.
+
+57
+00:03:09,909 --> 00:03:12,865
+This is if you're doing it locally or on the actual machine.
+
+58
+00:03:12,865 --> 00:03:15,670
+So you'll want to make sure to create a virtual environment and
+
+59
+00:03:15,669 --> 00:03:18,669
+then actually install the requirements and then run the simulation.
+
+60
+00:03:18,669 --> 00:03:20,379
+So this is for the producer.
+
+61
+00:03:20,379 --> 00:03:24,099
+Here are the instructions on running the file stream processing application.
+
+62
+00:03:24,099 --> 00:03:26,979
+Again, we're using the KSQL Creation
+
+63
+00:03:26,979 --> 00:03:28,819
+Script which we're going to show you in a second here.
+
+64
+00:03:28,819 --> 00:03:32,419
+But you can see what we're doing is essentially just running a ksql.py.
+
+65
+00:03:32,419 --> 00:03:33,934
+So we're actually going to use
+
+66
+00:03:33,935 --> 00:03:40,835
+a Python post using the Request Library to actually instantiate our KSQL queries,
+
+67
+00:03:40,835 --> 00:03:44,945
+and then finally we're going to run the consumer which actually consumes all the data.
+
+68
+00:03:44,944 --> 00:03:47,780
+Now, it's worth mentioning we really shouldn't be running
+
+69
+00:03:47,780 --> 00:03:50,765
+this consumer until you've completed all the other steps.
+
+70
+00:03:50,764 --> 00:03:53,629
+But again, you're going to go ahead and create other virtual environment,
+
+71
+00:03:53,629 --> 00:03:56,180
+install the requirements and then run the server.
+
+72
+00:03:56,180 --> 00:03:58,129
+Once that's done, you'll be able to open up
+
+73
+00:03:58,129 --> 00:04:02,074
+your browser and check out the website that's being rendered.
+
+74
+00:04:02,074 --> 00:04:04,489
+Once you're ready to actually start the project,
+
+75
+00:04:04,490 --> 00:04:07,129
+I recommend going to the producer's folder first.
+
+76
+00:04:07,129 --> 00:04:08,615
+In the producer's folder,
+
+77
+00:04:08,615 --> 00:04:11,390
+you'll find the files that you need to complete at
+
+78
+00:04:11,389 --> 00:04:15,769
+connector.py which is for our Kafka Connect as well as in the models directory.
+
+79
+00:04:15,770 --> 00:04:17,345
+Now in the models directory,
+
+80
+00:04:17,345 --> 00:04:19,880
+we're going to take a look first at the producer code.
+
+81
+00:04:19,879 --> 00:04:23,045
+So let's open that up. So in the producer,
+
+82
+00:04:23,045 --> 00:04:25,759
+you can see I've left comments for what you need to complete.
+
+83
+00:04:25,759 --> 00:04:28,839
+So you'll see that we need to go ahead and fill out broker properties,
+
+84
+00:04:28,839 --> 00:04:30,909
+we need to configure an AvroProducer,
+
+85
+00:04:30,910 --> 00:04:33,675
+create a topic, and so on and so forth,
+
+86
+00:04:33,675 --> 00:04:39,125
+and also create closing code for our actual producer.
+
+87
+00:04:39,125 --> 00:04:43,519
+So what's important here is that you essentially fill out the blanks if you will.
+
+88
+00:04:43,519 --> 00:04:45,979
+So I've put in some wrapping code for you,
+
+89
+00:04:45,980 --> 00:04:50,050
+but this is essentially a generic Kafka producer which you need to complete.
+
+90
+00:04:50,050 --> 00:04:53,000
+Now, this Kafka producer will be used by
+
+91
+00:04:53,000 --> 00:04:55,980
+all of the other derivative classes that you need to complete.
+
+92
+00:04:55,980 --> 00:05:01,660
+Next, we have the station which again inherits from that producer.
+
+93
+00:05:01,660 --> 00:05:04,445
+So once that producer's complete will automatically
+
+94
+00:05:04,444 --> 00:05:07,365
+go ahead and interact with Kafka in the station.
+
+95
+00:05:07,365 --> 00:05:09,800
+The only thing that we need to do here is provide
+
+96
+00:05:09,800 --> 00:05:13,055
+some information such as the name of the topic,
+
+97
+00:05:13,055 --> 00:05:17,400
+the value schema, number of partitions and replicas,
+
+98
+00:05:17,399 --> 00:05:21,484
+and of course we'd actually produce the data in the run function.
+
+99
+00:05:21,485 --> 00:05:23,995
+So it'll be up to you to complete this.
+
+100
+00:05:23,995 --> 00:05:27,090
+For turnstile, we're going to do something very similar.
+
+101
+00:05:27,089 --> 00:05:30,139
+Essentially, we're going to define a value schema.
+
+102
+00:05:30,139 --> 00:05:31,969
+So while in the turnstile,
+
+103
+00:05:31,970 --> 00:05:34,025
+I want to pause for a moment and just tell you
+
+104
+00:05:34,024 --> 00:05:36,500
+about the AvroSchemas which you need to complete.
+
+105
+00:05:36,500 --> 00:05:39,725
+So you'll see this folder over here on the left called schemas.
+
+106
+00:05:39,725 --> 00:05:41,930
+So there are a number of schemas which you
+
+107
+00:05:41,930 --> 00:05:44,209
+need to complete in order to complete the project.
+
+108
+00:05:44,209 --> 00:05:45,694
+So we're looking at turnstile.
+
+109
+00:05:45,694 --> 00:05:47,810
+So let's take a look at turnstile value.
+
+110
+00:05:47,810 --> 00:05:50,519
+Now, if you open this in the JSON editor,
+
+111
+00:05:50,519 --> 00:05:52,939
+it's just going to let you view it but we want to actually edit it.
+
+112
+00:05:52,939 --> 00:05:55,610
+So we're going to go open with editor.
+
+113
+00:05:55,610 --> 00:05:57,920
+Now, you can see there's nothing in here.
+
+114
+00:05:57,920 --> 00:06:02,870
+We have a key called to-do and then there's a value of complete this schema.
+
+115
+00:06:02,870 --> 00:06:06,483
+So it's up to you to define an AvroSchema for the turnstile,
+
+116
+00:06:06,483 --> 00:06:10,039
+for the weather type, and for the arrival type.
+
+117
+00:06:10,040 --> 00:06:12,200
+With that schema completed,
+
+118
+00:06:12,199 --> 00:06:15,039
+we're going to return to the turnstile file and
+
+119
+00:06:15,040 --> 00:06:17,930
+again we're simply going to name the topic, come up with the values,
+
+120
+00:06:17,930 --> 00:06:19,204
+provide the value schema,
+
+121
+00:06:19,204 --> 00:06:22,550
+and then pass in the number of partitions replicas as
+
+122
+00:06:22,550 --> 00:06:26,850
+well as complete the run function which actually produces data to Kafka.
+
+123
+00:06:27,170 --> 00:06:30,495
+Next, we're going to move on to weather.py.
+
+124
+00:06:30,495 --> 00:06:33,905
+Now, weather.py is actually interacting with the REST Proxy.
+
+125
+00:06:33,904 --> 00:06:36,919
+So the REST Proxy URL has been provided for you
+
+126
+00:06:36,920 --> 00:06:40,850
+as well as essentially a simulation of fake weather.
+
+127
+00:06:40,850 --> 00:06:43,295
+All that you need to do is complete
+
+128
+00:06:43,295 --> 00:06:47,405
+the weather schema and then you also need to complete a topic name,
+
+129
+00:06:47,404 --> 00:06:49,429
+number of partitions and replicas.
+
+130
+00:06:49,430 --> 00:06:53,090
+Then of course, you need to go ahead and produce the data to the REST Proxy.
+
+131
+00:06:53,089 --> 00:06:55,879
+So it'll be up to you to complete this post.
+
+132
+00:06:55,879 --> 00:06:58,069
+Now, I've left some notes here for you to think
+
+133
+00:06:58,069 --> 00:07:00,634
+about as you go ahead and complete this post.
+
+134
+00:07:00,634 --> 00:07:03,860
+Finally, we have to complete the Kafka Connect Connector.
+
+135
+00:07:03,860 --> 00:07:07,264
+You'll find that in the producers folder at inconnector.py.
+
+136
+00:07:07,264 --> 00:07:11,044
+So I've already passed in the Kafka Connect URL and a connector name for you.
+
+137
+00:07:11,045 --> 00:07:14,270
+So all you need to do is finish configuring the connector and
+
+138
+00:07:14,269 --> 00:07:18,004
+then going ahead and posting that to Kafka Connect.
+
+139
+00:07:18,004 --> 00:07:22,850
+Just note that for the key converter and value converter we're using JSON.
+
+140
+00:07:22,850 --> 00:07:25,760
+In part, that's because downstream of our Kafka Connect will
+
+141
+00:07:25,759 --> 00:07:30,754
+be Python Faust and files can't handle Avro without some work.
+
+142
+00:07:30,754 --> 00:07:33,454
+So we're just going to put use JSON for now.
+
+143
+00:07:33,454 --> 00:07:36,109
+With that done, we're ready to move on to the consumer.
+
+144
+00:07:36,110 --> 00:07:40,009
+So let's move back to the root of our folder and move into consumers.
+
+145
+00:07:40,009 --> 00:07:44,555
+So the first thing that we're going a take a look at in consumers is server.py.
+
+146
+00:07:44,555 --> 00:07:47,720
+Now, server.py doesn't have any code for you to complete but
+
+147
+00:07:47,720 --> 00:07:50,855
+you to can get a feel for how the project comes together in this file.
+
+148
+00:07:50,855 --> 00:07:52,670
+You can see we're instantiating a number of
+
+149
+00:07:52,670 --> 00:07:56,390
+Kafka consumers and then we're also setting up a web application which
+
+150
+00:07:56,389 --> 00:08:02,269
+listens on the port 8888 which is where you can actually access your web project.
+
+151
+00:08:02,269 --> 00:08:04,789
+With that done, the first thing that we want to go ahead and
+
+152
+00:08:04,790 --> 00:08:07,590
+take a look at is our Faust stream.
+
+153
+00:08:07,589 --> 00:08:11,479
+So you can see our Faust stream already has some records defined for
+
+154
+00:08:11,480 --> 00:08:16,745
+you and has an input station and an output transformed station.
+
+155
+00:08:16,745 --> 00:08:19,655
+So we're going to be performing some filtering on this data.
+
+156
+00:08:19,654 --> 00:08:22,279
+So we wanted to only take some of the fields off of
+
+157
+00:08:22,279 --> 00:08:25,414
+the station and produce this output transform station.
+
+158
+00:08:25,415 --> 00:08:30,410
+I've left a number of notes for you on what you're expected to complete here and
+
+159
+00:08:30,410 --> 00:08:32,120
+at the end you should be outputting
+
+160
+00:08:32,120 --> 00:08:35,544
+a transformed station complete with just these fields.
+
+161
+00:08:35,544 --> 00:08:39,514
+Likewise, we're going to be using KSQL to transform another stream.
+
+162
+00:08:39,514 --> 00:08:43,835
+In this case, we're going to be transforming the turnstile data into a turnstile summary.
+
+163
+00:08:43,835 --> 00:08:48,540
+So again, I've left the skeleton of a KSQL statement for you here,
+
+164
+00:08:48,539 --> 00:08:50,324
+I need you to go ahead and complete it.
+
+165
+00:08:50,325 --> 00:08:54,475
+The next thing l want to do is actually go ahead and complete the KSQL file.
+
+166
+00:08:54,475 --> 00:09:00,220
+We're using Requests to post the KSQL query to the server.
+
+167
+00:09:00,220 --> 00:09:03,115
+So we're not going to use in the KSQL client in this case.
+
+168
+00:09:03,115 --> 00:09:06,250
+So to complete this portion of the assignment,
+
+169
+00:09:06,250 --> 00:09:09,355
+you're simply going to fill in the rest of this KSQL statement.
+
+170
+00:09:09,355 --> 00:09:11,620
+I've left some helpful instructions for you here so
+
+171
+00:09:11,620 --> 00:09:14,629
+that you can be hinted along on what you need to do.
+
+172
+00:09:14,629 --> 00:09:21,414
+Now, I also want to note that you need to run ksql.py and faust_stream.py on your own.
+
+173
+00:09:21,414 --> 00:09:23,230
+So when we start the server,
+
+174
+00:09:23,230 --> 00:09:25,105
+it's not going to run these files for you.
+
+175
+00:09:25,105 --> 00:09:29,164
+They're meant to be developed independently of the server.
+
+176
+00:09:29,164 --> 00:09:33,429
+With those complete, you're ready to move on to the final steps.
+
+177
+00:09:33,429 --> 00:09:36,409
+The final step of the project is to go into
+
+178
+00:09:36,409 --> 00:09:43,159
+the Consumer's Models folder and we're going to complete line and weather.py.
+
+179
+00:09:43,159 --> 00:09:47,449
+So the only thing that you're expected to complete here is process message.
+
+180
+00:09:47,450 --> 00:09:50,509
+In this case, we have if true, true,
+
+181
+00:09:50,509 --> 00:09:55,340
+true and that's simply because these conditional statements are not completed.
+
+182
+00:09:55,340 --> 00:10:00,155
+So you need to actually look at the messages and decide how to route them.
+
+183
+00:10:00,154 --> 00:10:03,964
+In weather.py, you need to actually process the message as well.
+
+184
+00:10:03,965 --> 00:10:06,500
+You'll need to extract the temperature and status from
+
+185
+00:10:06,500 --> 00:10:09,465
+the message and update the object's representation.
+
+186
+00:10:09,465 --> 00:10:13,085
+Finally, we have this consumer.py.
+
+187
+00:10:13,085 --> 00:10:16,610
+Consumer.py it should be completed before the previous models.
+
+188
+00:10:16,610 --> 00:10:19,129
+Consumer.py is similar to the producer model
+
+189
+00:10:19,129 --> 00:10:21,950
+that we created in the producer section of the project.
+
+190
+00:10:21,950 --> 00:10:25,165
+Essentially, you're going to set up a Kafka Consumer,
+
+191
+00:10:25,164 --> 00:10:27,679
+you're going to handle various types of data,
+
+192
+00:10:27,679 --> 00:10:29,644
+whether it's Avro or JSON,
+
+193
+00:10:29,644 --> 00:10:33,725
+and you're going to subscribe to topics that have been passed in to the object.
+
+194
+00:10:33,725 --> 00:10:36,245
+So we have this topic named pattern here.
+
+195
+00:10:36,245 --> 00:10:38,779
+You're going to handle on a sign.
+
+196
+00:10:38,779 --> 00:10:41,819
+So remember from our class lessons that sometimes we want
+
+197
+00:10:41,820 --> 00:10:44,915
+to go ahead and rewind a partition to the first known offset.
+
+198
+00:10:44,914 --> 00:10:47,129
+So you're expected to do that here.
+
+199
+00:10:47,129 --> 00:10:49,789
+Then finally, you need to go ahead and complete
+
+200
+00:10:49,789 --> 00:10:52,689
+the consumer function and the close function.
+
+201
+00:10:52,690 --> 00:10:55,600
+With that done, you're ready to go ahead and run
+
+202
+00:10:55,600 --> 00:10:59,545
+your Python server to see an output that looks something like this.
+
+203
+00:10:59,544 --> 00:11:03,204
+I do want to note that it may take a few minutes for your project to start running.
+
+204
+00:11:03,205 --> 00:11:06,935
+So if you open this page and you see that there's duplicate trains.
+
+205
+00:11:06,934 --> 00:11:09,879
+That's okay. Just give it a few minutes to stabilize.
+
+206
+00:11:09,879 --> 00:11:13,644
+Given the limited resources and the speed at which the simulation runs,
+
+207
+00:11:13,644 --> 00:11:17,590
+it can take up to a couple of minutes for the project to begin running correctly.
+
+208
+00:11:17,590 --> 00:11:21,820
+So be patient and go ahead and look for this temperature to update,
+
+209
+00:11:21,820 --> 00:11:24,190
+the number of total turnstile entries to change,
+
+210
+00:11:24,190 --> 00:11:26,990
+as well as trains to advance from station to station.
+
+211
+00:11:26,990 --> 00:11:30,055
+All right. Now you're ready to get started with the project.
+
+212
+00:11:30,054 --> 00:11:32,259
+In this project, you're going to see
+
+213
+00:11:32,259 --> 00:11:35,605
+all the tools that we learned about in lessons throughout this course.
+
+214
+00:11:35,605 --> 00:11:38,180
+I hope you enjoyed getting a taste of how to actually use
+
+215
+00:11:38,179 --> 00:11:41,870
+these tools and see how they work together all at the same time.
+
+216
+00:11:41,870 --> 00:11:46,310
+I hope especially that after taking this class and completing this project,
+
+217
+00:11:46,309 --> 00:11:49,129
+that you feel that you have a strong grasp on how you can use
+
+218
+00:11:49,129 --> 00:11:53,279
+these tools to improve your work on a daily basis.
+
