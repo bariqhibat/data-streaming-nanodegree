@@ -18,8 +18,8 @@ class Station(Producer):
 
     #
     # TODO: Define this value schema in `schemas/station_value.json, then uncomment the below
-    #
-    #value_schema = avro.load(f"{Path(__file__).parents[0]}/schemas/arrival_value.json")
+    # ! DONE
+    value_schema = avro.load(f"{Path(__file__).parents[0]}/schemas/arrival_value.json")
 
     def __init__(self, station_id, name, color, direction_a=None, direction_b=None):
         self.name = name
@@ -35,15 +35,15 @@ class Station(Producer):
         #
         # TODO: Complete the below by deciding on a topic name, number of partitions, and number of
         # replicas
+        # ! DONE
         #
-        #
-        topic_name = f"{station_name}" # TODO: Come up with a better topic name
+        topic_name = f"com.udacity.dsnd.{station_name}" # ! DONE. TODO: Come up with a better topic name
         super().__init__(
             topic_name,
             key_schema=Station.key_schema,
-            # TODO: value_schema=Station.value_schema, # TODO: Uncomment once schema is defined
-            # TODO: num_partitions=???,
-            # TODO: num_replicas=???,
+            value_schema=Station.value_schema, # TODO: Uncomment once schema is defined
+            num_partitions=1,
+            num_replicas=1,
         )
 
         self.station_id = int(station_id)
@@ -61,19 +61,26 @@ class Station(Producer):
         #
         # TODO: Complete this function by producing an arrival message to Kafka
         #
-        #
+        # ? UNCLEAR
         logger.info("arrival kafka integration incomplete - skipping")
-        #self.producer.produce(
-        #    topic=self.topic_name,
-        #    key={"timestamp": self.time_millis()},
-        #    value={
-        #        #
-        #        #
-        #        # TODO: Configure this
-        #        #
-        #        #
-        #    },
-        #)
+        self.producer.produce(
+           topic=self.topic_name,
+           key={"timestamp": self.time_millis()},
+           value={
+               "train_id": train,
+               "station_id": prev_station_id,
+               "prev_direction": prev_direction,
+               "direction": direction,
+               "station_id": 'DUMMY',
+               "line": 'DUMMY',
+               "train_status": 'DUMMY',
+               #
+               #
+               # TODO: Configure this
+               # ? UNCLEAR
+               #
+           },
+        )
 
     def __str__(self):
         return "Station | {:^5} | {:<30} | Direction A: | {:^5} | departing to {:<30} | Direction B: | {:^5} | departing to {:<30} | ".format(
