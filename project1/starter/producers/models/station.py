@@ -37,9 +37,9 @@ class Station(Producer):
         # replicas
         # ! DONE
         #
-        topic_name = f"com.udacity.dsnd.{station_name}" # ! DONE. TODO: Come up with a better topic name
+        self.topic_name = f"com.udacity.dsnd.{station_name}" # ! DONE. TODO: Come up with a better topic name
         super().__init__(
-            topic_name,
+            self.topic_name,
             key_schema=Station.key_schema,
             value_schema=Station.value_schema, # TODO: Uncomment once schema is defined
             num_partitions=1,

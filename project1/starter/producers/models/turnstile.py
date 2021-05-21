@@ -16,10 +16,10 @@ class Turnstile(Producer):
 
     #
     # TODO: Define this value schema in `schemas/turnstile_value.json, then uncomment the below
-    #
-    #value_schema = avro.load(
-    #    f"{Path(__file__).parents[0]}/schemas/turnstile_value.json"
-    #)
+    # ! DONE
+    value_schema = avro.load(
+       f"{Path(__file__).parents[0]}/schemas/turnstile_value.json"
+    )
 
     def __init__(self, station):
         """Create the Turnstile"""
@@ -35,14 +35,16 @@ class Turnstile(Producer):
         #
         # TODO: Complete the below by deciding on a topic name, number of partitions, and number of
         # replicas
+        # ! DONE
         #
-        #
+        self.topic_name = f"com.udacity.dsnd.{station_name}", # !DONE. TODO: Come up with a better topic name
+        
         super().__init__(
-            f"{station_name}", # TODO: Come up with a better topic name
+            self.topic_name,
             key_schema=Turnstile.key_schema,
-            # TODO: value_schema=Turnstile.value_schema, TODO: Uncomment once schema is defined
-            # TODO: num_partitions=???,
-            # TODO: num_replicas=???,
+            value_schema=Turnstile.value_schema, # !DONE. TODO: Uncomment once schema is defined
+            num_partitions=1,
+            num_replicas=1,
         )
         self.station = station
         self.turnstile_hardware = TurnstileHardware(station)
@@ -57,3 +59,18 @@ class Turnstile(Producer):
         # of entries that were calculated
         #
         #
+        self.producer.produce(
+           topic=self.topic_name,
+           key={
+               "timestamp": self.time_millis(),
+               "long": num_entries 
+               },
+           value={
+               "station_id": self.station.id,
+               "station_name": self.station_name,
+               "line": "DUMMY",
+               #
+               # ? UNCLEAR
+               #
+           },
+        )
