@@ -1,3 +1,4 @@
+
 """Methods pertaining to weather data"""
 from enum import IntEnum
 import json

@@ -9,6 +9,8 @@ from confluent_kafka.avro import AvroProducer
 
 logger = logging.getLogger(__name__)
 
+BROKER_URL_DOCKER = "PLAINTEXT://kafka0:9092,PLAINTEXT://kafka1:9093,PLAINTEXT://kafka2:9094	"
+AVRO_SCHEMA_REGISTRY = "http://schema-registry:8081/"
 
 class Producer:
     """Defines and provides common functionality amongst Producers"""
@@ -35,12 +37,17 @@ class Producer:
         #
         # TODO: Configure the broker properties below. Make sure to reference the project README
         # and use the Host URL for Kafka and Schema Registry!
+        # ! DONE
         #
         #
         self.broker_properties = {
             # TODO
-            # TODO
-            # TODO
+            "linger.ms": "10000",
+            "bootstrap.server": BROKER_URL_DOCKER,
+            "batch.num.messages": "10000",
+            "queue.buffering.max.messages": "1000000",
+            "queue.buffering.max.kbytes": "1000",
+            "compression.type": "lz4"
         }
 
         # If the topic does not already exist, try to create it
@@ -48,19 +55,70 @@ class Producer:
             self.create_topic()
             Producer.existing_topics.add(self.topic_name)
 
-        # TODO: Configure the AvroProducer
-        # self.producer = AvroProducer(
-        # )
+        # TODO: Configure the AvroProducer 
+        # ! DONE
+        self.producer = AvroProducer(
+            {
+                'bootstrap.servers': BROKER_URL_DOCKER,
+                'on_delivery': self.delivery_report,
+                'schema.registry.url': AVRO_SCHEMA_REGISTRY
+            }, 
+            default_key_schema=self.key_schema, 
+            default_value_schema=self.value_schema
+        )
 
-    def create_topic(self):
-        """Creates the producer topic if it does not already exist"""
-        #
-        #
-        # TODO: Write code that creates the topic for this producer if it does not already exist on
-        # the Kafka Broker.
-        #
-        #
-        logger.info("topic creation kafka integration incomplete - skipping")
+    def delivery_report(err, msg):
+        """ Called once for each message produced to indicate delivery result.
+            Triggered by poll() or flush(). """
+        if err is not None:
+            print('Message delivery failed: {}'.format(err))
+        else:
+            print('Message delivered to {} [{}]'.format(msg.topic(), msg.partition()))
+
+    def topic_exists(self, client, topic_name):
+        """Checks if the given topic exists"""
+        topic_metadata = client.list_topics(timeout=5)
+        return topic_name in set(t.topic for t in iter(topic_metadata.topics.values()))
+
+    def get_client(self):
+        client = AdminClient({"bootstrap.servers": BROKER_URL_DOCKER})
+
+        return client
+
+
+    def create_topic(self, topic_name):
+        """Creates the topic with the given topic name"""
+        # ! DONE
+
+        client = self.get_client()
+
+        isExist = self.topic_exists(client, topic_name=topic_name)
+
+        if isExist:
+            return None
+
+        futures = client.create_topics(
+            [
+                NewTopic(
+                    topic=topic_name,
+                    num_partitions=10,
+                    replication_factor=1,
+                    config={
+                        "cleanup.policy": "delete",
+                        "compression.type": "lz4",
+                        "delete.retention.ms": "2000",
+                        "file.delete.delay.ms": "2000",
+                    },
+                )
+            ]
+        )
+
+        for _, future in futures.items():
+            try:
+                future.result()
+                print("topic created")
+            except Exception as e:
+                print(f"failed to create topic {topic_name}: {e}")
 
     def time_millis(self):
         return int(round(time.time() * 1000))
@@ -71,8 +129,8 @@ class Producer:
         #
         # TODO: Write cleanup code for the Producer here
         #
-        #
-        logger.info("producer close incomplete - skipping")
+        # ! DONE
+        self.producer.flush()
 
     def time_millis(self):
         """Use this function to get the key for Kafka Events"""
