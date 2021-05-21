@@ -14,6 +14,7 @@ from models.producer import Producer
 
 logger = logging.getLogger(__name__)
 
+REST_PROXY_URL_DOCKER = "http://rest-proxy:8082/"
 
 class Weather(Producer):
     """Defines a simulated weather model"""
@@ -37,8 +38,12 @@ class Weather(Producer):
         # replicas
         #
         #
+        self.topic_name = f"com.udacity.dsnd.weather", # !DONE. TODO: Come up with a better topic name
+
+        self.consumer_group = f"solution7-consumer-group-{random.randint(0,10000)}"
+
         super().__init__(
-            "weather", # TODO: Come up with a better topic name
+            self.topic_name,
             key_schema=Weather.key_schema,
             value_schema=Weather.value_schema,
         )
@@ -56,7 +61,7 @@ class Weather(Producer):
 
         #
         # TODO: Define this value schema in `schemas/weather_value.json
-        #
+        # !DONE
         if Weather.value_schema is None:
             with open(f"{Path(__file__).parents[0]}/schemas/weather_value.json") as f:
                 Weather.value_schema = json.load(f)
@@ -80,34 +85,63 @@ class Weather(Producer):
         # specify the Avro schemas and verify that you are using the correct Content-Type header.
         #
         #
-        logger.info("weather kafka proxy integration incomplete - skipping")
-        #resp = requests.post(
-        #    #
-        #    #
-        #    # TODO: What URL should be POSTed to?
-        #    #
-        #    #
-        #    f"{Weather.rest_proxy_url}/TODO",
-        #    #
-        #    #
-        #    # TODO: What Headers need to bet set?
-        #    #
-        #    #
-        #    headers={"Content-Type": "TODO"},
-        #    data=json.dumps(
-        #        {
-        #            #
-        #            #
-        #            # TODO: Provide key schema, value schema, and records
-        #            #
-        #            #
-        #        }
-        #    ),
-        #)
-        #resp.raise_for_status()
-
-        logger.debug(
-            "sent weather data to kafka, temp: %s, status: %s",
-            self.temp,
-            self.status.name,
+        """Consumes from REST Proxy"""
+        consumer_name = "solution7-consumer"
+        headers = {"Content-Type": "application/vnd.kafka.json.v2+json"}
+        data = {"name": consumer_name, "format": "avro"}
+        resp = requests.post(
+            f"{REST_PROXY_URL_DOCKER}/consumers/{self.consumer_group}",
+            data=json.dumps(data),
+            headers=headers,
         )
+
+        try:
+            resp.raise_for_status()
+        except:
+            print(
+                f"Failed to create REST proxy consumer: {json.dumps(resp.json(), indent=2)}"
+            )
+            return
+        
+        print("REST Proxy consumer group created")
+
+        resp_data = resp.json()
+        #
+        data = {"topics": [self.topic_name]}
+        resp = requests.post(
+            f"{resp_data['base_uri']}/subscription", data=json.dumps(data), headers=headers
+        )
+        try:
+            resp.raise_for_status()
+        except:
+            print(
+                f"Failed to subscribe REST proxy consumer: {json.dumps(resp.json(), indent=2)}"
+            )
+            return
+        print("REST Proxy consumer subscription created")
+        while True:
+            #
+            # TODO: Set the Accept header to the same data type as the consumer was created with
+            #       See: https://docs.confluent.io/current/kafka-rest/api.html#get--consumers-(string-group_name)-instances-(string-instance)-records
+            #
+            headers = {"Accept": "application/vnd.kafka.avro.v2+json"}
+            #
+            # TODO: Begin fetching records
+            #       See: https://docs.confluent.io/current/kafka-rest/api.html#get--consumers-(string-group_name)-instances-(string-instance)-records
+            #
+            resp = requests.get(f"{resp_data['base_uri']}/records", headers=headers)
+            try:
+                resp.raise_for_status()
+            except:
+                print(
+                    f"Failed to fetch records with REST proxy consumer: {json.dumps(resp.json(), indent=2)}"
+                )
+                return
+            print("Consumed records via REST Proxy:")
+            print(f"{json.dumps(resp.json())}")
+
+            logger.debug(
+                "sent weather data to kafka, temp: %s, status: %s",
+                self.temp,
+                self.status.name,
+            )
